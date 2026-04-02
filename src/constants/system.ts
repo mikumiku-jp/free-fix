@@ -3,7 +3,7 @@
 import { feature } from 'bun:bundle'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import { logForDebugging } from '../utils/debug.js'
-import { isEnvDefinedFalsy } from '../utils/envUtils.js'
+import { isEnvDefinedFalsy, isEnvTruthy } from '../utils/envUtils.js'
 import { getAPIProvider } from '../utils/model/providers.js'
 import { getWorkload } from '../utils/workloadContext.js'
 
@@ -57,6 +57,22 @@ function isAttributionHeaderEnabled(): boolean {
 }
 
 /**
+ * Native client attestation mutates the serialized request body by replacing a
+ * cch placeholder. That path has been implicated in prompt-cache instability in
+ * standalone external builds, so keep it off there by default while preserving
+ * an explicit env override for debugging / parity checks.
+ */
+function isNativeClientAttestationEnabled(): boolean {
+  if (isEnvTruthy(process.env.CLAUDE_CODE_NATIVE_CLIENT_ATTESTATION)) {
+    return true
+  }
+  if (isEnvDefinedFalsy(process.env.CLAUDE_CODE_NATIVE_CLIENT_ATTESTATION)) {
+    return false
+  }
+  return process.env.USER_TYPE === 'ant' && feature('NATIVE_CLIENT_ATTESTATION')
+}
+
+/**
  * Get attribution header for API requests.
  * Returns a header string with cc_version (including fingerprint) and cc_entrypoint.
  * Enabled by default, can be disabled via env var or GrowthBook killswitch.
@@ -79,7 +95,7 @@ export function getAttributionHeader(fingerprint: string): string {
   const entrypoint = process.env.CLAUDE_CODE_ENTRYPOINT ?? 'unknown'
 
   // cch=00000 placeholder is overwritten by Bun's HTTP stack with attestation token
-  const cch = feature('NATIVE_CLIENT_ATTESTATION') ? ' cch=00000;' : ''
+  const cch = isNativeClientAttestationEnabled() ? ' cch=00000;' : ''
   // cc_workload: turn-scoped hint so the API can route e.g. cron-initiated
   // requests to a lower QoS pool. Absent = interactive default. Safe re:
   // fingerprint (computed from msg chars + version only, line 78 above) and
