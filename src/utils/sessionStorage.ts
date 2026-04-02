@@ -4358,6 +4358,11 @@ export function isLoggableMessage(m: Message): boolean {
   //   survive resume / subprocess boundaries, otherwise the client re-announces
   //   deferred tools, agent lists, or MCP instructions and silently busts the
   //   prompt cache prefix on the next turn.
+  // - resume/throttle state attachments: these are consulted by resume recovery
+  //   and attachment de-dup logic. If they are omitted from the transcript, a
+  //   resumed session re-injects skills, memories, and mode/reminder guidance
+  //   that the model already saw, inflating cache_creation and changing the
+  //   reconstructed prefix.
   if (m.type === 'attachment' && getUserType() !== 'ant') {
     if (
       m.attachment.type === 'hook_additional_context' &&
@@ -4369,7 +4374,16 @@ export function isLoggableMessage(m: Message): boolean {
       m.attachment.type === 'deferred_tools_delta' ||
       m.attachment.type === 'agent_listing_delta' ||
       m.attachment.type === 'mcp_instructions_delta' ||
-      m.attachment.type === 'skill_listing'
+      m.attachment.type === 'skill_listing' ||
+      m.attachment.type === 'invoked_skills' ||
+      m.attachment.type === 'relevant_memories' ||
+      m.attachment.type === 'todo_reminder' ||
+      m.attachment.type === 'task_reminder' ||
+      m.attachment.type === 'plan_mode' ||
+      m.attachment.type === 'plan_mode_reentry' ||
+      m.attachment.type === 'plan_mode_exit' ||
+      m.attachment.type === 'auto_mode' ||
+      m.attachment.type === 'auto_mode_exit'
     ) {
       return true
     }
