@@ -63,7 +63,6 @@ import {
   isValidImagePaste,
 } from 'src/types/textInputTypes.js'
 import { randomUUID, type UUID } from 'crypto'
-import { getSettings_DEPRECATED } from './settings/settings.js'
 import { getSnippetForTwoFileDiff } from 'src/tools/FileEditTool/utils.js'
 import type {
   ContentBlockParam,
@@ -944,13 +943,10 @@ export async function getAttachments(
   const mainThreadAttachments = isMainThread
     ? [
         maybe('ide_selection', async () =>
-          getSelectedLinesFromIDE(ideSelection, toolUseContext),
+          getSelectedLinesFromIDE(ideSelection, messages, toolUseContext),
         ),
         maybe('ide_opened_file', async () =>
-          getOpenedFileFromIDE(ideSelection, toolUseContext),
-        ),
-        maybe('output_style', async () =>
-          Promise.resolve(getOutputStyleAttachment()),
+          getOpenedFileFromIDE(ideSelection, messages, toolUseContext),
         ),
         maybe('diagnostics', async () =>
           getDiagnosticAttachments(toolUseContext),
@@ -1594,25 +1590,9 @@ function getCriticalSystemReminderAttachment(
   return [{ type: 'critical_system_reminder', content: reminder }]
 }
 
-function getOutputStyleAttachment(): Attachment[] {
-  const settings = getSettings_DEPRECATED()
-  const outputStyle = settings?.outputStyle || 'default'
-
-  // Only show for non-default styles
-  if (outputStyle === 'default') {
-    return []
-  }
-
-  return [
-    {
-      type: 'output_style',
-      style: outputStyle,
-    },
-  ]
-}
-
 async function getSelectedLinesFromIDE(
   ideSelection: IDESelection | null,
+  messages: Message[] | undefined,
   toolUseContext: ToolUseContext,
 ): Promise<Attachment[]> {
   const ideName = getConnectedIdeName(toolUseContext.options.mcpClients)
@@ -1628,6 +1608,26 @@ async function getSelectedLinesFromIDE(
   const appState = toolUseContext.getAppState()
   if (isFileReadDenied(ideSelection.filePath, appState.toolPermissionContext)) {
     return []
+  }
+
+  for (let i = (messages?.length ?? 0) - 1; i >= 0; i--) {
+    const message = messages?.[i]
+    if (message?.type !== 'attachment') continue
+    if (message.attachment.type === 'selected_lines_in_ide') {
+      const prev = message.attachment
+      if (
+        prev.filename === ideSelection.filePath &&
+        prev.lineStart === ideSelection.lineStart &&
+        prev.lineEnd === ideSelection.lineStart + ideSelection.lineCount - 1 &&
+        prev.content === ideSelection.text
+      ) {
+        return []
+      }
+      break
+    }
+    if (message.attachment.type === 'opened_file_in_ide') {
+      break
+    }
   }
 
   return [
@@ -1863,6 +1863,7 @@ async function getNestedMemoryAttachmentsForFile(
 
 async function getOpenedFileFromIDE(
   ideSelection: IDESelection | null,
+  messages: Message[] | undefined,
   toolUseContext: ToolUseContext,
 ): Promise<Attachment[]> {
   if (!ideSelection?.filePath || ideSelection.text) {
@@ -1872,6 +1873,20 @@ async function getOpenedFileFromIDE(
   const appState = toolUseContext.getAppState()
   if (isFileReadDenied(ideSelection.filePath, appState.toolPermissionContext)) {
     return []
+  }
+
+  for (let i = (messages?.length ?? 0) - 1; i >= 0; i--) {
+    const message = messages?.[i]
+    if (message?.type !== 'attachment') continue
+    if (message.attachment.type === 'opened_file_in_ide') {
+      if (message.attachment.filename === ideSelection.filePath) {
+        return []
+      }
+      break
+    }
+    if (message.attachment.type === 'selected_lines_in_ide') {
+      break
+    }
   }
 
   // Get nested memory files
