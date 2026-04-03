@@ -15,6 +15,8 @@
 
 This repository is a fork of [paoloanzn/free-code](https://github.com/paoloanzn/free-code).
 
+This fork builds on top of `paoloanzn/free-code`. Thanks to Paolo for the original fork and the groundwork that made this project possible.
+
 The main reason this fork exists is simple:
 
 > `paoloanzn/free-code` をベースにした、クリーンでビルド可能な fork で、最近の Claude Code ビルドで報告されている異常なトークン消費の問題にもパッチを当てています。
