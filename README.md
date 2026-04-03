@@ -5,9 +5,9 @@
 <h1 align="center">free-code</h1>
 
 <p align="center">
-  <strong>The free build of Claude Code.</strong><br>
-  All telemetry stripped. All guardrails removed. All experimental features unlocked.<br>
-  One binary, zero callbacks home.
+  <strong>A practical fork of free-code focused on fixing abnormal token usage.</strong><br>
+  Prompt-cache stability fixes, reduced prompt churn, stripped telemetry, unlocked experimental features.<br>
+  Built for people who want the fork to stay usable in real sessions.
 </p>
 
 <p align="center">
@@ -23,18 +23,21 @@
 ## Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/paoloanzn/free-code/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mikumiku-jp/free-fix/main/install.sh | bash
 ```
 
-Checks your system, installs Bun if needed, clones the repo, builds with all experimental features enabled, and symlinks `free-code` on your PATH.
+Checks your system, installs Bun if needed, clones the repo, builds the binary, and symlinks both `free-fix` and `free-code` on your PATH.
 
-Then run `free-code` and use the `/login` command to authenticate with your preferred model provider.
+Then run `free-fix` and use `/login` to authenticate with your preferred model provider.
 
 ---
 
 ## Table of Contents
 
 - [What is this](#what-is-this)
+- [Why this fork exists](#why-this-fork-exists)
+- [What this fork changes](#what-this-fork-changes)
+- [Upstream README](#upstream-readme)
 - [Model Providers](#model-providers)
 - [Quick Install](#quick-install)
 - [Requirements](#requirements)
@@ -51,9 +54,49 @@ Then run `free-code` and use the `/login` command to authenticate with your pref
 
 ## What is this
 
-A clean, buildable fork of Anthropic's [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI -- the terminal-native AI coding agent. The upstream source became publicly available on March 31, 2026 through a source map exposure in the npm distribution.
+A clean, buildable fork of [paoloanzn/free-code](https://github.com/paoloanzn/free-code) that also patches the abnormal token overconsumption issues reported in recent Claude Code builds.
 
-This fork applies three categories of changes on top of that snapshot:
+The short version is simple:
+
+- If you like `free-code` but noticed usage burning down too fast, this fork is meant to address that.
+- It keeps the broader `free-code` direction intact, but adds targeted fixes for prompt-cache instability and repeated prompt injection.
+- It also keeps the other changes people usually want from this ecosystem: stripped telemetry, removed prompt-level guardrails, and unlocked experimental flags.
+
+The original Claude Code source became publicly available on March 31, 2026 through a source map exposure in the npm distribution. `free-code` turned that snapshot into a public, buildable fork. This repository builds on top of that work and focuses on making the fork more cost-stable in day-to-day use.
+
+## Why this fork exists
+
+Recent Claude Code builds have shown a pattern where token usage can inflate far beyond what the visible conversation would suggest. In practice, that usually means one of two things:
+
+- prompt cache continuity gets broken, so old context is re-created instead of read from cache
+- client-authored prompt attachments get re-injected or duplicated more often than they should
+
+That kind of failure is especially annoying because the product still appears to work. The only visible symptom is that usage drops faster than expected.
+
+This fork exists to reduce that class of waste without otherwise changing how the tool feels to use.
+
+## What this fork changes
+
+This fork keeps the broader `free-code` changes, and adds extra work aimed specifically at token efficiency and prompt stability.
+
+### Token overconsumption fixes
+
+The main focus of this fork is reducing abnormal token usage caused by prompt churn.
+
+Changes include:
+
+- Persisting resume-relevant attachment state so resumed sessions do not forget what was already announced.
+- Preserving prompt-cache control-plane attachments such as deferred tool deltas, agent listing deltas, and MCP instruction deltas.
+- Preserving resume and throttle state used for skills, memories, plan mode, auto mode, todo reminders, and task reminders.
+- Disabling the native attestation placeholder path by default in external builds, since it touches request serialization and is a plausible cache-instability source.
+- Removing redundant prompt injections such as duplicated output-style guidance.
+- Avoiding repeated IDE context attachments when the selected lines or opened file have not actually changed.
+
+The goal here is not to change model behavior. The goal is to stop wasting tokens on bytes the model has effectively already seen.
+
+### Other changes carried by this fork
+
+In addition to the token-usage work, this fork also includes the broader modifications people expect from `free-code`-style builds:
 
 ### Telemetry removed
 
@@ -72,6 +115,18 @@ This build strips those injections. The model's own safety training still applie
 ### Experimental features unlocked
 
 Claude Code ships with 88 feature flags gated behind `bun:bundle` compile-time switches. Most are disabled in the public npm release. This build unlocks all 54 flags that compile cleanly. See [Experimental Features](#experimental-features) below, or refer to [FEATURES.md](FEATURES.md) for the full audit.
+
+### Command aliases and install flow
+
+This fork installs both `free-fix` and `free-code` as CLI entrypoints pointing at the same binary. The intent is to make the patched build easy to invoke from anywhere without changing your existing workflow more than necessary.
+
+## Upstream README
+
+For the broader project overview, provider details, feature list, and the original `free-code` positioning, read the upstream README here:
+
+https://github.com/paoloanzn/free-code/blob/main/README.md
+
+This README is intentionally focused on what is different in this fork. If you want the full project tour, the upstream document is the right reference.
 
 ---
 
