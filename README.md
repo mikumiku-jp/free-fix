@@ -1,22 +1,82 @@
 <p align="center">
-  <img src="assets/screenshot.png" alt="free-code" width="720" />
+  <img src="assets/screenshot.png" alt="free-fix" width="720" />
 </p>
 
-<h1 align="center">free-code</h1>
-
-<p align="center">
-  <strong>A practical fork of free-code focused on fixing abnormal token usage.</strong><br>
-  Prompt-cache stability fixes, reduced prompt churn, stripped telemetry, unlocked experimental features.<br>
-  Built for people who want the fork to stay usable in real sessions.
-</p>
+<h1 align="center">free-fix</h1>
 
 <p align="center">
-  <a href="#quick-install"><img src="https://img.shields.io/badge/install-one--liner-blue?style=flat-square" alt="Install" /></a>
-  <a href="https://github.com/paoloanzn/free-code/stargazers"><img src="https://img.shields.io/github/stars/paoloanzn/free-code?style=flat-square" alt="Stars" /></a>
-  <a href="https://github.com/paoloanzn/free-code/issues"><img src="https://img.shields.io/github/issues/paoloanzn/free-code?style=flat-square" alt="Issues" /></a>
-  <a href="https://github.com/paoloanzn/free-code/blob/main/FEATURES.md"><img src="https://img.shields.io/badge/features-88%20flags-orange?style=flat-square" alt="Feature Flags" /></a>
-  <a href="#ipfs-mirror"><img src="https://img.shields.io/badge/IPFS-mirrored-teal?style=flat-square" alt="IPFS" /></a>
+  <strong>A fork of free-code focused on fixing abnormal token usage.</strong><br>
+  Prompt-cache stability fixes, lower prompt churn, stripped telemetry, unlocked experimental features.
 </p>
+
+---
+
+## What is this
+
+This repository is a fork of [paoloanzn/free-code](https://github.com/paoloanzn/free-code).
+
+The main reason this fork exists is simple:
+
+> `paoloanzn/free-code` をベースにした、クリーンでビルド可能な fork で、最近の Claude Code ビルドで報告されている異常なトークン消費の問題にもパッチを当てています。
+
+In English:
+
+> A clean, buildable fork of `paoloanzn/free-code` that also patches the abnormal token overconsumption issues reported in recent Claude Code builds.
+
+This fork is meant for people who liked `free-code`, but found that usage could still drain too quickly in real sessions.
+
+---
+
+## Why this fork exists
+
+Recent Claude Code builds have shown a class of problems where token usage becomes noticeably higher than the visible conversation would suggest.
+
+In practice, that usually means one or more of the following:
+
+- prompt cache continuity gets broken across resume or process boundaries
+- client-authored prompt attachments are re-injected when they should have been suppressed
+- stable guidance gets added more often than necessary, inflating input size turn after turn
+
+The tool still works, which makes the problem easy to miss. What you notice instead is that usage drops too fast.
+
+This fork focuses on reducing that waste while keeping the CLI broadly compatible with the `free-code` direction.
+
+---
+
+## What this fork changes
+
+This repository keeps the broader `free-code` style, but adds targeted changes aimed at prompt stability and lower token burn.
+
+### Token overconsumption fixes
+
+The main work in this fork is around prompt-cache stability and repeated prompt injection.
+
+Current changes include:
+
+- Persisting resume-relevant attachment state so resumed sessions do not forget what was already announced.
+- Preserving prompt-cache control-plane attachments such as deferred tool deltas, agent listing deltas, and MCP instruction deltas.
+- Preserving resume and throttle state used for skills, memories, plan mode, auto mode, todo reminders, and task reminders.
+- Reducing repeated prompt churn from IDE context attachments when the selected lines or opened file have not changed.
+- Removing redundant prompt injections such as duplicated output-style guidance.
+- Disabling the native attestation placeholder path by default in external builds, because it touches request serialization and was a plausible source of cache instability.
+
+The goal is not to change model behavior. The goal is to stop spending tokens on bytes the model has effectively already seen.
+
+### Other changes inherited from free-code
+
+This fork also keeps the broader modifications that made `free-code` attractive in the first place:
+
+- telemetry stripped or stubbed
+- prompt-level guardrails removed
+- experimental feature flags unlocked
+- local buildability preserved
+
+### CLI aliases
+
+This fork installs both `free-fix` and `free-code` as entrypoints to the same binary.
+
+If you already use `free-code`, you can keep doing that.
+If you want an explicit name for the patched build, use `free-fix`.
 
 ---
 
@@ -26,388 +86,76 @@
 curl -fsSL https://raw.githubusercontent.com/mikumiku-jp/free-fix/main/install.sh | bash
 ```
 
-Checks your system, installs Bun if needed, clones the repo, builds the binary, and symlinks both `free-fix` and `free-code` on your PATH.
+The installer:
 
-Then run `free-fix` and use `/login` to authenticate with your preferred model provider.
+- checks your system
+- installs Bun if needed
+- clones the repo
+- builds the binary
+- symlinks `free-fix` and `free-code` into your PATH
 
----
+After installation:
 
-## Table of Contents
+```bash
+free-fix
+```
 
-- [What is this](#what-is-this)
-- [Why this fork exists](#why-this-fork-exists)
-- [What this fork changes](#what-this-fork-changes)
-- [Upstream README](#upstream-readme)
-- [Model Providers](#model-providers)
-- [Quick Install](#quick-install)
-- [Requirements](#requirements)
-- [Build](#build)
-- [Usage](#usage)
-- [Experimental Features](#experimental-features)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
-- [IPFS Mirror](#ipfs-mirror)
-- [Contributing](#contributing)
-- [License](#license)
+Then authenticate with `/login`.
 
 ---
 
-## What is this
+## Build From Source
 
-A clean, buildable fork of [paoloanzn/free-code](https://github.com/paoloanzn/free-code) that also patches the abnormal token overconsumption issues reported in recent Claude Code builds.
+```bash
+git clone https://github.com/mikumiku-jp/free-fix.git
+cd free-fix
+bun run build
+./cli
+```
 
-The short version is simple:
+Useful commands:
 
-- If you like `free-code` but noticed usage burning down too fast, this fork is meant to address that.
-- It keeps the broader `free-code` direction intact, but adds targeted fixes for prompt-cache instability and repeated prompt injection.
-- It also keeps the other changes people usually want from this ecosystem: stripped telemetry, removed prompt-level guardrails, and unlocked experimental flags.
+- `bun run build`
+- `bun run build:dev`
+- `bun run build:dev:full`
+- `bun run compile`
 
-The original Claude Code source became publicly available on March 31, 2026 through a source map exposure in the npm distribution. `free-code` turned that snapshot into a public, buildable fork. This repository builds on top of that work and focuses on making the fork more cost-stable in day-to-day use.
-
-## Why this fork exists
-
-Recent Claude Code builds have shown a pattern where token usage can inflate far beyond what the visible conversation would suggest. In practice, that usually means one of two things:
-
-- prompt cache continuity gets broken, so old context is re-created instead of read from cache
-- client-authored prompt attachments get re-injected or duplicated more often than they should
-
-That kind of failure is especially annoying because the product still appears to work. The only visible symptom is that usage drops faster than expected.
-
-This fork exists to reduce that class of waste without otherwise changing how the tool feels to use.
-
-## What this fork changes
-
-This fork keeps the broader `free-code` changes, and adds extra work aimed specifically at token efficiency and prompt stability.
-
-### Token overconsumption fixes
-
-The main focus of this fork is reducing abnormal token usage caused by prompt churn.
-
-Changes include:
-
-- Persisting resume-relevant attachment state so resumed sessions do not forget what was already announced.
-- Preserving prompt-cache control-plane attachments such as deferred tool deltas, agent listing deltas, and MCP instruction deltas.
-- Preserving resume and throttle state used for skills, memories, plan mode, auto mode, todo reminders, and task reminders.
-- Disabling the native attestation placeholder path by default in external builds, since it touches request serialization and is a plausible cache-instability source.
-- Removing redundant prompt injections such as duplicated output-style guidance.
-- Avoiding repeated IDE context attachments when the selected lines or opened file have not actually changed.
-
-The goal here is not to change model behavior. The goal is to stop wasting tokens on bytes the model has effectively already seen.
-
-### Other changes carried by this fork
-
-In addition to the token-usage work, this fork also includes the broader modifications people expect from `free-code`-style builds:
-
-### Telemetry removed
-
-The upstream binary phones home through OpenTelemetry/gRPC, GrowthBook analytics, Sentry error reporting, and custom event logging. In this build:
-
-- All outbound telemetry endpoints are dead-code-eliminated or stubbed
-- GrowthBook feature flag evaluation still works locally (needed for runtime feature gates) but does not report back
-- No crash reports, no usage analytics, no session fingerprinting
-
-### Security-prompt guardrails removed
-
-Anthropic injects system-level instructions into every conversation that constrain Claude's behavior beyond what the model itself enforces. These include hardcoded refusal patterns, injected "cyber risk" instruction blocks, and managed-settings security overlays pushed from Anthropic's servers.
-
-This build strips those injections. The model's own safety training still applies -- this just removes the extra layer of prompt-level restrictions that the CLI wraps around it.
-
-### Experimental features unlocked
-
-Claude Code ships with 88 feature flags gated behind `bun:bundle` compile-time switches. Most are disabled in the public npm release. This build unlocks all 54 flags that compile cleanly. See [Experimental Features](#experimental-features) below, or refer to [FEATURES.md](FEATURES.md) for the full audit.
-
-### Command aliases and install flow
-
-This fork installs both `free-fix` and `free-code` as CLI entrypoints pointing at the same binary. The intent is to make the patched build easy to invoke from anywhere without changing your existing workflow more than necessary.
+---
 
 ## Upstream README
 
-For the broader project overview, provider details, feature list, and the original `free-code` positioning, read the upstream README here:
+This README is intentionally focused on what is different in this fork.
+
+If you want the broader project overview, provider setup, feature explanations, and the original `free-code` positioning, read the upstream README here:
 
 https://github.com/paoloanzn/free-code/blob/main/README.md
 
-This README is intentionally focused on what is different in this fork. If you want the full project tour, the upstream document is the right reference.
+That is the right place to look for general project details.
 
 ---
 
-## Model Providers
+## Current Position
 
-free-code supports **five API providers** out of the box. Set the corresponding environment variable to switch providers -- no code changes needed.
+This fork should be understood as:
 
-### Anthropic (Direct API) -- Default
+- a practical fork of `free-code`
+- focused on reducing abnormal token usage
+- still evolving as more prompt-churn sources are identified
 
-Use Anthropic's first-party API directly.
-
-| Model | ID |
-|---|---|
-| Claude Opus 4.6 | `claude-opus-4-6` |
-| Claude Sonnet 4.6 | `claude-sonnet-4-6` |
-| Claude Haiku 4.5 | `claude-haiku-4-5` |
-
-### OpenAI Codex
-
-Use OpenAI's Codex models for code generation. Requires a Codex subscription.
-
-| Model | ID |
-|---|---|
-| GPT-5.3 Codex (recommended) | `gpt-5.3-codex` |
-| GPT-5.4 | `gpt-5.4` |
-| GPT-5.4 Mini | `gpt-5.4-mini` |
-
-```bash
-export CLAUDE_CODE_USE_OPENAI=1
-free-code
-```
-
-### AWS Bedrock
-
-Route requests through your AWS account via Amazon Bedrock.
-
-```bash
-export CLAUDE_CODE_USE_BEDROCK=1
-export AWS_REGION="us-east-1"   # or AWS_DEFAULT_REGION
-free-code
-```
-
-Uses your standard AWS credentials (environment variables, `~/.aws/config`, or IAM role). Models are mapped to Bedrock ARN format automatically (e.g., `us.anthropic.claude-opus-4-6-v1`).
-
-| Variable | Purpose |
-|---|---|
-| `CLAUDE_CODE_USE_BEDROCK` | Enable Bedrock provider |
-| `AWS_REGION` / `AWS_DEFAULT_REGION` | AWS region (default: `us-east-1`) |
-| `ANTHROPIC_BEDROCK_BASE_URL` | Custom Bedrock endpoint |
-| `AWS_BEARER_TOKEN_BEDROCK` | Bearer token auth |
-| `CLAUDE_CODE_SKIP_BEDROCK_AUTH` | Skip auth (testing) |
-
-### Google Cloud Vertex AI
-
-Route requests through your GCP project via Vertex AI.
-
-```bash
-export CLAUDE_CODE_USE_VERTEX=1
-free-code
-```
-
-Uses Google Cloud Application Default Credentials (`gcloud auth application-default login`). Models are mapped to Vertex format automatically (e.g., `claude-opus-4-6@latest`).
-
-### Anthropic Foundry
-
-Use Anthropic Foundry for dedicated deployments.
-
-```bash
-export CLAUDE_CODE_USE_FOUNDRY=1
-export ANTHROPIC_FOUNDRY_API_KEY="..."
-free-code
-```
-
-Supports custom deployment IDs as model names.
-
-### Provider Selection Summary
-
-| Provider | Env Variable | Auth Method |
-|---|---|---|
-| Anthropic (default) | -- | `ANTHROPIC_API_KEY` or OAuth |
-| OpenAI Codex | `CLAUDE_CODE_USE_OPENAI=1` | OAuth via OpenAI |
-| AWS Bedrock | `CLAUDE_CODE_USE_BEDROCK=1` | AWS credentials |
-| Google Vertex AI | `CLAUDE_CODE_USE_VERTEX=1` | `gcloud` ADC |
-| Anthropic Foundry | `CLAUDE_CODE_USE_FOUNDRY=1` | `ANTHROPIC_FOUNDRY_API_KEY` |
+It improves the situation substantially, but it should not be read as a guarantee that every remaining usage anomaly has been eliminated.
 
 ---
 
-## Requirements
+## Notes
 
-- **Runtime**: [Bun](https://bun.sh) >= 1.3.11
-- **OS**: macOS or Linux (Windows via WSL)
-- **Auth**: An API key or OAuth login for your chosen provider
-
-```bash
-# Install Bun if you don't have it
-curl -fsSL https://bun.sh/install | bash
-```
-
----
-
-## Build
-
-```bash
-git clone https://github.com/paoloanzn/free-code.git
-cd free-code
-bun build
-./cli
-```
-
-### Build Variants
-
-| Command | Output | Features | Description |
-|---|---|---|---|
-| `bun run build` | `./cli` | `VOICE_MODE` only | Production-like binary |
-| `bun run build:dev` | `./cli-dev` | `VOICE_MODE` only | Dev version stamp |
-| `bun run build:dev:full` | `./cli-dev` | All 54 experimental flags | Full unlock build |
-| `bun run compile` | `./dist/cli` | `VOICE_MODE` only | Alternative output path |
-
-### Custom Feature Flags
-
-Enable specific flags without the full bundle:
-
-```bash
-# Enable just ultraplan and ultrathink
-bun run ./scripts/build.ts --feature=ULTRAPLAN --feature=ULTRATHINK
-
-# Add a flag on top of the dev build
-bun run ./scripts/build.ts --dev --feature=BRIDGE_MODE
-```
-
----
-
-## Usage
-
-```bash
-# Interactive REPL (default)
-./cli
-
-# One-shot mode
-./cli -p "what files are in this directory?"
-
-# Specify a model
-./cli --model claude-opus-4-6
-
-# Run from source (slower startup)
-bun run dev
-
-# OAuth login
-./cli /login
-```
-
-### Environment Variables Reference
-
-| Variable | Purpose |
-|---|---|
-| `ANTHROPIC_API_KEY` | Anthropic API key |
-| `ANTHROPIC_AUTH_TOKEN` | Auth token (alternative) |
-| `ANTHROPIC_MODEL` | Override default model |
-| `ANTHROPIC_BASE_URL` | Custom API endpoint |
-| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Custom Opus model ID |
-| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Custom Sonnet model ID |
-| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Custom Haiku model ID |
-| `CLAUDE_CODE_OAUTH_TOKEN` | OAuth token via env |
-| `CLAUDE_CODE_API_KEY_HELPER_TTL_MS` | API key helper cache TTL |
-
----
-
-## Experimental Features
-
-The `bun run build:dev:full` build enables all 54 working feature flags. Highlights:
-
-### Interaction & UI
-
-| Flag | Description |
-|---|---|
-| `ULTRAPLAN` | Remote multi-agent planning on Claude Code web (Opus-class) |
-| `ULTRATHINK` | Deep thinking mode -- type "ultrathink" to boost reasoning effort |
-| `VOICE_MODE` | Push-to-talk voice input and dictation |
-| `TOKEN_BUDGET` | Token budget tracking and usage warnings |
-| `HISTORY_PICKER` | Interactive prompt history picker |
-| `MESSAGE_ACTIONS` | Message action entrypoints in the UI |
-| `QUICK_SEARCH` | Prompt quick-search |
-| `SHOT_STATS` | Shot-distribution stats |
-
-### Agents, Memory & Planning
-
-| Flag | Description |
-|---|---|
-| `BUILTIN_EXPLORE_PLAN_AGENTS` | Built-in explore/plan agent presets |
-| `VERIFICATION_AGENT` | Verification agent for task validation |
-| `AGENT_TRIGGERS` | Local cron/trigger tools for background automation |
-| `AGENT_TRIGGERS_REMOTE` | Remote trigger tool path |
-| `EXTRACT_MEMORIES` | Post-query automatic memory extraction |
-| `COMPACTION_REMINDERS` | Smart reminders around context compaction |
-| `CACHED_MICROCOMPACT` | Cached microcompact state through query flows |
-| `TEAMMEM` | Team-memory files and watcher hooks |
-
-### Tools & Infrastructure
-
-| Flag | Description |
-|---|---|
-| `BRIDGE_MODE` | IDE remote-control bridge (VS Code, JetBrains) |
-| `BASH_CLASSIFIER` | Classifier-assisted bash permission decisions |
-| `PROMPT_CACHE_BREAK_DETECTION` | Cache-break detection in compaction/query flow |
-
-See [FEATURES.md](FEATURES.md) for the complete audit of all 88 flags, including 34 broken flags with reconstruction notes.
-
----
-
-## Project Structure
-
-```
-scripts/
-  build.ts                # Build script with feature flag system
-
-src/
-  entrypoints/cli.tsx     # CLI entrypoint
-  commands.ts             # Command registry (slash commands)
-  tools.ts                # Tool registry (agent tools)
-  QueryEngine.ts          # LLM query engine
-  screens/REPL.tsx        # Main interactive UI (Ink/React)
-
-  commands/               # /slash command implementations
-  tools/                  # Agent tool implementations (Bash, Read, Edit, etc.)
-  components/             # Ink/React terminal UI components
-  hooks/                  # React hooks
-  services/               # API clients, MCP, OAuth, analytics
-    api/                  # API client + Codex fetch adapter
-    oauth/                # OAuth flows (Anthropic + OpenAI)
-  state/                  # App state store
-  utils/                  # Utilities
-    model/                # Model configs, providers, validation
-  skills/                 # Skill system
-  plugins/                # Plugin system
-  bridge/                 # IDE bridge
-  voice/                  # Voice input
-  tasks/                  # Background task management
-```
-
----
-
-## Tech Stack
-
-| | |
-|---|---|
-| **Runtime** | [Bun](https://bun.sh) |
-| **Language** | TypeScript |
-| **Terminal UI** | React + [Ink](https://github.com/vadimdemedes/ink) |
-| **CLI Parsing** | [Commander.js](https://github.com/tj/commander.js) |
-| **Schema Validation** | Zod v4 |
-| **Code Search** | ripgrep (bundled) |
-| **Protocols** | MCP, LSP |
-| **APIs** | Anthropic Messages, OpenAI Codex, AWS Bedrock, Google Vertex AI |
-
----
-
-## IPFS Mirror
-
-A full copy of this repository is permanently pinned on IPFS via Filecoin:
-
-| | |
-|---|---|
-| **CID** | `bafybeiegvef3dt24n2znnnmzcud2vxat7y7rl5ikz7y7yoglxappim54bm` |
-| **Gateway** | https://w3s.link/ipfs/bafybeiegvef3dt24n2znnnmzcud2vxat7y7rl5ikz7y7yoglxappim54bm |
-
-If this repo gets taken down, the code lives on.
-
----
-
-## Contributing
-
-Contributions are welcome. If you're working on restoring one of the 34 broken feature flags, check the reconstruction notes in [FEATURES.md](FEATURES.md) first -- many are close to compiling and just need a small wrapper or missing asset.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/my-feature`)
-3. Commit your changes (`git commit -m 'feat: add something'`)
-4. Push to the branch (`git push origin feat/my-feature`)
-5. Open a Pull Request
+- The original Claude Code source was publicly exposed via npm-distributed source maps, and `free-code` turned that snapshot into a buildable public fork.
+- This repository builds on top of that work rather than replacing it.
+- If you are comparing behavior, treat `paoloanzn/free-code` as the functional baseline and this fork as the cost-stability-focused variant.
 
 ---
 
 ## License
 
-The original Claude Code source is the property of Anthropic. This fork exists because the source was publicly exposed through their npm distribution. Use at your own discretion.
+The original Claude Code source is the property of Anthropic.
+This fork exists because the source was publicly exposed through their npm distribution.
+Use at your own discretion.
