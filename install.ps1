@@ -108,29 +108,6 @@ function Install-Deps {
   Write-Ok "Dependencies installed"
 }
 
-function Build-Binary {
-  Write-Info "Building free-fix..."
-  Push-Location $InstallDir
-  try {
-    bun run build:dev:full
-  } finally {
-    Pop-Location
-  }
-
-  $candidates = @(
-    (Join-Path $InstallDir "cli-dev.exe"),
-    (Join-Path $InstallDir "cli-dev")
-  )
-  foreach ($candidate in $candidates) {
-    if (Test-Path $candidate) {
-      Write-Ok "Binary built: $candidate"
-      return $candidate
-    }
-  }
-
-  Fail "Build succeeded but the compiled binary was not found."
-}
-
 function Ensure-UserPath($PathToAdd) {
   $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
   $entries = @()
@@ -148,19 +125,18 @@ function Ensure-UserPath($PathToAdd) {
   Write-Warn "$PathToAdd was added to your user PATH. Restart your terminal if commands are not found immediately."
 }
 
-function Link-Binary($BuiltBinary) {
+function Write-Launcher($CommandName) {
   New-Item -ItemType Directory -Force -Path $LinkDir | Out-Null
 
-  $freeFixExe = Join-Path $LinkDir "free-fix.exe"
-  $freeCodeExe = Join-Path $LinkDir "free-code.exe"
+  $launcherPath = Join-Path $LinkDir "$CommandName.cmd"
+  $entrypoint = Join-Path $InstallDir "src\entrypoints\cli.tsx"
+  $launcher = @"
+@echo off
+bun "$entrypoint" %*
+"@
 
-  Copy-Item $BuiltBinary $freeFixExe -Force
-  Copy-Item $BuiltBinary $freeCodeExe -Force
-
-  Write-Ok "Installed: $freeFixExe"
-  Write-Ok "Installed: $freeCodeExe"
-
-  Ensure-UserPath $LinkDir
+  Set-Content -Path $launcherPath -Value $launcher -Encoding ASCII
+  Write-Ok "Installed: $launcherPath"
 }
 
 Write-Host ""
@@ -171,8 +147,10 @@ Ensure-Git
 Ensure-Bun
 Sync-Repo
 Install-Deps
-$builtBinary = Build-Binary
-Link-Binary $builtBinary
+Write-Info "Installing Bun-based launchers..."
+Write-Launcher "free-fix"
+Write-Launcher "free-code"
+Ensure-UserPath $LinkDir
 
 Write-Host ""
 Write-Host "Installation complete." -ForegroundColor Green
