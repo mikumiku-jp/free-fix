@@ -1,6 +1,5 @@
 // Critical system constants extracted to break circular dependencies
 
-import { feature } from 'bun:bundle'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import { logForDebugging } from '../utils/debug.js'
 import { isEnvDefinedFalsy, isEnvTruthy } from '../utils/envUtils.js'
@@ -69,7 +68,7 @@ function isNativeClientAttestationEnabled(): boolean {
   if (isEnvDefinedFalsy(process.env.CLAUDE_CODE_NATIVE_CLIENT_ATTESTATION)) {
     return false
   }
-  return process.env.USER_TYPE === 'ant' && feature('NATIVE_CLIENT_ATTESTATION')
+  return false
 }
 
 /**
