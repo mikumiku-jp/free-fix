@@ -2824,7 +2824,7 @@ async function run(): Promise<CommanderCommand> {
       profileCheckpoint('before_print_import');
       const {
         runHeadless
-      } = await import('src/cli/print.js');
+      } = await import('./cli/print.ts');
       profileCheckpoint('after_print_import');
       void runHeadless(inputPrompt, () => headlessStore.getState(), headlessStore.setState, commandsHeadless, tools, sdkMcpConfigs, agentDefinitions.activeAgents, {
         continue: options.continue,
@@ -3901,7 +3901,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       mcpServeHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpServeHandler({
       debug,
       verbose
@@ -3918,19 +3918,19 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       mcpRemoveHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpRemoveHandler(name, options);
   });
   mcp.command('list').description('List configured MCP servers. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.').action(async () => {
     const {
       mcpListHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpListHandler();
   });
   mcp.command('get <name>').description('Get details about an MCP server. Note: The workspace trust dialog is skipped and stdio servers from .mcp.json are spawned for health checks. Only use this command in directories you trust.').action(async (name: string) => {
     const {
       mcpGetHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpGetHandler(name);
   });
   mcp.command('add-json <name> <json>').description('Add an MCP server (stdio or SSE) with a JSON string').option('-s, --scope <scope>', 'Configuration scope (local, user, or project)', 'local').option('--client-secret', 'Prompt for OAuth client secret (or set MCP_CLIENT_SECRET env var)').action(async (name: string, json: string, options: {
@@ -3939,7 +3939,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       mcpAddJsonHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpAddJsonHandler(name, json, options);
   });
   mcp.command('add-from-claude-desktop').description('Import MCP servers from Claude Desktop (Mac and WSL only)').option('-s, --scope <scope>', 'Configuration scope (local, user, or project)', 'local').action(async (options: {
@@ -3947,13 +3947,13 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       mcpAddFromDesktopHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpAddFromDesktopHandler(options);
   });
   mcp.command('reset-project-choices').description('Reset all approved and rejected project-scoped (.mcp.json) servers within this project').action(async () => {
     const {
       mcpResetChoicesHandler
-    } = await import('./cli/handlers/mcp.js');
+    } = await import('./cli/handlers/mcp.tsx');
     await mcpResetChoicesHandler();
   });
 
@@ -4111,7 +4111,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       authLogin
-    } = await import('./cli/handlers/auth.js');
+    } = await import('./cli/handlers/auth.ts');
     await authLogin({
       email,
       sso,
@@ -4125,13 +4125,13 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       authStatus
-    } = await import('./cli/handlers/auth.js');
+    } = await import('./cli/handlers/auth.ts');
     await authStatus(opts);
   });
   auth.command('logout').description('Log out from your Anthropic account').action(async () => {
     const {
       authLogout
-    } = await import('./cli/handlers/auth.js');
+    } = await import('./cli/handlers/auth.ts');
     await authLogout();
   });
 
@@ -4151,7 +4151,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginValidateHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginValidateHandler(manifestPath, options);
   });
 
@@ -4163,7 +4163,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginListHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginListHandler(options);
   });
 
@@ -4176,7 +4176,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       marketplaceAddHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await marketplaceAddHandler(source, options);
   });
   marketplaceCmd.command('list').description('List all configured marketplaces').option('--json', 'Output as JSON').addOption(coworkOption()).action(async (options: {
@@ -4185,7 +4185,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       marketplaceListHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await marketplaceListHandler(options);
   });
   marketplaceCmd.command('remove <name>').alias('rm').description('Remove a configured marketplace').addOption(coworkOption()).action(async (name: string, options: {
@@ -4193,7 +4193,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       marketplaceRemoveHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await marketplaceRemoveHandler(name, options);
   });
   marketplaceCmd.command('update [name]').description('Update marketplace(s) from their source - updates all if no name specified').addOption(coworkOption()).action(async (name: string | undefined, options: {
@@ -4201,7 +4201,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       marketplaceUpdateHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await marketplaceUpdateHandler(name, options);
   });
 
@@ -4212,7 +4212,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginInstallHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginInstallHandler(plugin, options);
   });
 
@@ -4224,7 +4224,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginUninstallHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginUninstallHandler(plugin, options);
   });
 
@@ -4235,7 +4235,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginEnableHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginEnableHandler(plugin, options);
   });
 
@@ -4247,7 +4247,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginDisableHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginDisableHandler(plugin, options);
   });
 
@@ -4258,7 +4258,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       pluginUpdateHandler
-    } = await import('./cli/handlers/plugins.js');
+    } = await import('./cli/handlers/plugins.ts');
     await pluginUpdateHandler(plugin, options);
   });
   // END ANT-ONLY
@@ -4269,7 +4269,7 @@ async function run(): Promise<CommanderCommand> {
       setupTokenHandler
     }, {
       createRoot
-    }] = await Promise.all([import('./cli/handlers/util.js'), import('./ink.js')]);
+    }] = await Promise.all([import('./cli/handlers/util.tsx'), import('./ink.js')]);
     const root = await createRoot(getBaseRenderOptions(false));
     await setupTokenHandler(root);
   });
@@ -4278,7 +4278,7 @@ async function run(): Promise<CommanderCommand> {
   program.command('agents').description('List configured agents').option('--setting-sources <sources>', 'Comma-separated list of setting sources to load (user, project, local).').action(async () => {
     const {
       agentsHandler
-    } = await import('./cli/handlers/agents.js');
+    } = await import('./cli/handlers/agents.ts');
     await agentsHandler();
     process.exit(0);
   });
@@ -4348,7 +4348,7 @@ async function run(): Promise<CommanderCommand> {
       doctorHandler
     }, {
       createRoot
-    }] = await Promise.all([import('./cli/handlers/util.js'), import('./ink.js')]);
+    }] = await Promise.all([import('./cli/handlers/util.tsx'), import('./ink.js')]);
     const root = await createRoot(getBaseRenderOptions(false));
     await doctorHandler(root);
   });
@@ -4362,7 +4362,7 @@ async function run(): Promise<CommanderCommand> {
   program.command('update').alias('upgrade').description('Check for updates and install if available').action(async () => {
     const {
       update
-    } = await import('src/cli/update.js');
+    } = await import('./cli/update.ts');
     await update();
   });
 
@@ -4397,7 +4397,7 @@ async function run(): Promise<CommanderCommand> {
   }) => {
     const {
       installHandler
-    } = await import('./cli/handlers/util.js');
+    } = await import('./cli/handlers/util.tsx');
     await installHandler(target, options);
   });
 
