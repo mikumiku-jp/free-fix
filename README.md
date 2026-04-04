@@ -84,8 +84,16 @@ If you want an explicit name for the patched build, use `free-fix`.
 
 ## Quick Install
 
+macOS / Linux:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mikumiku-jp/free-fix/main/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/mikumiku-jp/free-fix/main/install.ps1 | iex
 ```
 
 The installer:
