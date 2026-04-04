@@ -96,6 +96,12 @@ Windows PowerShell:
 irm https://raw.githubusercontent.com/mikumiku-jp/free-fix/main/install.ps1 | iex
 ```
 
+Windows `cmd.exe`:
+
+```bat
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/mikumiku-jp/free-fix/main/install.ps1 | iex"
+```
+
 The installer:
 
 - checks your system
